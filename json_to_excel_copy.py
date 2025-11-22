@@ -1,17 +1,20 @@
 import json
 import pandas as pd
 import os
+import numpy as np
 from glob import glob
+from datetime import datetime
 
 
 # Toma todos los .json de la carpeta actual
 JSON_FILES = ["top.json", "jungler.json", "mid.json","adc.json", "support.json"]
 
-OUTPUT_FILE = "estadisticas_heroes.xlsx"
+date = datetime.now().strftime("%Y-%m-%d")
+
+output_file = f"{date}.xlsx"
 
 BASE_COLUMNS = [
     "name_es",
-    "avatar",
     "win_rate_percent",
     "appear_rate_percent",
     "forbid_rate_percent",
@@ -29,7 +32,6 @@ def json_to_dataframe(path: str) -> pd.DataFrame:
     for item in data:
         rows.append({
             "name_es": item.get("name_es"),
-            "avatar": item.get("avatar"),
             "win_rate_percent": float(item.get("win_rate_percent", 0)),
             "appear_rate_percent": float(item.get("appear_rate_percent", 0)),
             "forbid_rate_percent": float(item.get("forbid_rate_percent", 0)),
@@ -84,6 +86,24 @@ def json_to_dataframe(path: str) -> pd.DataFrame:
     )
     # -------------------------------
 
+
+        # ---- Calculo del tier ----
+    conditions = [
+    (df["ranking_final"] >= 85),
+    (df["ranking_final"] >= 70),
+    (df["ranking_final"] >= 45),
+    (df["ranking_final"] >= 20),
+    (df["ranking_final"] >= 0)
+]
+
+    choices = ["S+", "S", "A", "B", "C"]
+
+    df["tier"] = np.select(conditions, choices, default="")
+
+
+        # ORDENAR POR ranking_final (descendente)
+    df = df.sort_values(by="ranking_final", ascending=False).reset_index(drop=True)
+
     return df
 
 def main():
@@ -91,7 +111,7 @@ def main():
         print("No se encontraron archivos JSON en la carpeta actual.")
         return
 
-    with pd.ExcelWriter(OUTPUT_FILE, engine="openpyxl") as writer:
+    with pd.ExcelWriter(output_file, engine="openpyxl") as writer:
         for path in JSON_FILES:
             df = json_to_dataframe(path)
 
@@ -100,7 +120,26 @@ def main():
 
             df.to_excel(writer, sheet_name=sheet_name, index=False)
 
-    print(f"Archivo Excel generado: {OUTPUT_FILE}")
+            # ----------------------------------------
+            # Ajustar ancho de las columnas del Excel
+            # ----------------------------------------
+            sheet = writer.sheets[sheet_name]
+
+            for col in sheet.columns:
+                max_length = 0
+                column = col[0].column_letter  # Letra de la columna
+
+                for cell in col:
+                    try:
+                        value = str(cell.value)
+                        if value is not None:
+                            max_length = max(max_length, len(value))
+                    except:
+                        pass
+
+                sheet.column_dimensions[column].width = max_length + 4
+
+    print(f"Archivo Excel generado: {output_file}")
     print("Pestañas creadas:")
     for path in JSON_FILES:
         print(" -", os.path.splitext(os.path.basename(path))[0])
