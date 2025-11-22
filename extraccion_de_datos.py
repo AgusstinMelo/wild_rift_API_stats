@@ -167,7 +167,10 @@ for posicion in data_rank['data']['2']:
         champ['win_rate_percent'] = campeon['win_rate_percent']
         champ['appear_rate_percent'] = campeon['appear_rate_percent']
         champ['forbid_rate_percent'] = campeon['forbid_rate_percent']
-        champ['name_es'] = DICT_CHAMP[champ['name']]
+        try:
+            champ['name_es'] = DICT_CHAMP[champ['name']]
+        except KeyError:
+            champ['name_es'] = champ['name']
         list_data.append(champ)
 
     with open(POSITIONS[posicion] + '.json', 'x', encoding="utf-8") as file:
