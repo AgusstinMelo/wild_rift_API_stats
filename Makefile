@@ -1,4 +1,4 @@
-SCRIPTS = extraccion_de_datos.py json_to_excel_copy.py
+SCRIPTS = extraccion_de_datos.py json_to_excel.py
 
 GENERATED = *.xlsx
 GENERATED_TRASH = *.json
@@ -15,8 +15,8 @@ run_windows:
 	@echo Ejecutando scripts...
 	@echo Ejecutando extraccion_de_datos.py
 	@python extraccion_de_datos.py
-	@echo Ejecutando json_to_excel_copy.py
-	@python json_to_excel_copy.py
+	@echo Ejecutando json_to_excel.py
+	@python json_to_excel.py
 	@echo Listo.
 
 clean_windows:
