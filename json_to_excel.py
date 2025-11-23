@@ -5,13 +5,8 @@ import numpy as np
 from glob import glob
 from datetime import datetime
 
-
 # Toma todos los .json de la carpeta actual
 JSON_FILES = ["top.json", "jungler.json", "mid.json","adc.json", "support.json"]
-
-date = datetime.now().strftime("%Y-%m-%d")
-
-output_file = f"{date}.xlsx"
 
 BASE_COLUMNS = [
     "name_es",
@@ -21,9 +16,12 @@ BASE_COLUMNS = [
     "difficultyL",
 ]
 
+date = datetime.now().strftime("%Y-%m-%d")
+output_file = f"{date}.xlsx"
+
 def json_to_dataframe(path: str) -> pd.DataFrame:
-    """Carga un JSON y devuelve un DataFrame con las columnas deseadas
-    + la columna ranking_pct calculada en base a win_rate_percent.
+    """Carga el json y devuelve un DataFrame con las columnas bases
+    más el percentil del Winrate, Pickrate y Banrate, el ranking final (parámetro del orden) y el tier correspondiente.
     """
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
@@ -40,68 +38,59 @@ def json_to_dataframe(path: str) -> pd.DataFrame:
 
     df = pd.DataFrame(rows, columns=BASE_COLUMNS)
 
-    # ---- Cálculo equivalente a tu fórmula de Excel ----
-    # JERARQUIA(...; rango; 1) = rank ascendente (1 = menor valor)
+    # PERCENTIL WINRATE
     w = df["win_rate_percent"]
-    ranks = w.rank(method="min", ascending=True)  # como JERARQUIA(...;...;1)
+    ranks = w.rank(method="min", ascending=True)
 
     n = len(df)
     if n > 1:
         df["ranking_winrate"] = ((ranks - 1) / (n - 1) * 100).round(2)
     else:
         df["ranking_winrate"] = 0.0
-    # ---------------------------------------------------
 
-        # ---- Cálculo equivalente a tu fórmula de Excel ----
-    # JERARQUIA(...; rango; 1) = rank ascendente (1 = menor valor)
+    # PERCENTIL PICKRATE
     p = df["appear_rate_percent"]
-    ranks = p.rank(method="min", ascending=True)  # como JERARQUIA(...;...;1)
+    ranks = p.rank(method="min", ascending=True)
 
     n = len(df)
     if n > 1:
         df["ranking_pickrate"] = ((ranks - 1) / (n - 1) * 100).round(2)
     else:
         df["ranking_pickrate"] = 0.0
-    # ---------------------------------------------------
 
-        # ---- Cálculo equivalente a tu fórmula de Excel ----
-    # JERARQUIA(...; rango; 1) = rank ascendente (1 = menor valor)
+    # PERCENTIL BANRATE
     b = df["forbid_rate_percent"]
-    ranks = b.rank(method="min", ascending=True)  # como JERARQUIA(...;...;1)
+    ranks = b.rank(method="min", ascending=True)
 
     n = len(df)
     if n > 1:
         df["ranking_banrate"] = ((ranks - 1) / (n - 1) * 100).round(2)
     else:
         df["ranking_banrate"] = 0.0
-    # ---------------------------------------------------
 
-        # ---- Score final ponderado ----
+    # RANKING FINAL PONDERADO
     df["ranking_final"] = ((
         (df["ranking_winrate"] * 0.60
         + df["ranking_pickrate"] * 0.32
         + df["ranking_banrate"] * 0.08)
         * 1 - ((df["difficultyL"] - 1) * 0.2)).round(2)
-
     )
-    # -------------------------------
 
-
-        # ---- Calculo del tier ----
+    # CHAMPTIER
     conditions = [
     (df["ranking_final"] >= 85),
     (df["ranking_final"] >= 70),
     (df["ranking_final"] >= 45),
     (df["ranking_final"] >= 20),
     (df["ranking_final"] >= 0)
-]
+    ]
 
     choices = ["S+", "S", "A", "B", "C"]
 
-    df["tier"] = np.select(conditions, choices, default="")
+    df["champ_tier"] = np.select(conditions, choices, default="")
 
 
-        # ORDENAR POR ranking_final (descendente)
+    # ORDENAMIENTO POR RANKING FINAL PONDERADO
     df = df.sort_values(by="ranking_final", ascending=False).reset_index(drop=True)
 
     return df
@@ -120,15 +109,11 @@ def main():
 
             df.to_excel(writer, sheet_name=sheet_name, index=False)
 
-            # ----------------------------------------
             # Ajustar ancho de las columnas del Excel
-            # ----------------------------------------
             sheet = writer.sheets[sheet_name]
-
             for col in sheet.columns:
                 max_length = 0
-                column = col[0].column_letter  # Letra de la columna
-
+                column = col[0].column_letter
                 for cell in col:
                     try:
                         value = str(cell.value)
@@ -139,10 +124,7 @@ def main():
 
                 sheet.column_dimensions[column].width = max_length + 4
 
-    print(f"Archivo Excel generado: {output_file}")
-    print("Pestañas creadas:")
-    for path in JSON_FILES:
-        print(" -", os.path.splitext(os.path.basename(path))[0])
+    print(f"Estadísticas obtenidas: {output_file}")
 
 if __name__ == "__main__":
     main()
