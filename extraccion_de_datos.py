@@ -1,6 +1,5 @@
 import json
 import requests
-from googletrans import Translator
 
 RANK_URL = "https://mlol.qt.qq.com/go/lgame_battle_info/hero_rank_list_v2"
 CHAMP_URL = "https://game.gtimg.cn/images/lgamem/act/lrlib/js/heroList/hero_list.js"
@@ -26,13 +25,13 @@ DICT_CHAMP = {
     '斯维因': 'Swain',
     '维迦': 'Veigar',
     '阿萝拉': 'Aurora',
-    '奥莉安娜': 'Oriana',
+    '奥莉安娜': 'Orianna',
     '薇古丝': 'Vex',
     '拉克丝': 'Lux',
     '永恩': 'Yone',
     '崔斯特': 'Twisted Fate',
     '黑默丁格': 'Heimerdinger',
-    '辛德拉': 'Sindra',
+    '辛德拉': 'Syndra',
     '丽桑卓': 'Lissandra',
     '维克托': 'Viktor',
     '亚索': 'Yasuo',
@@ -43,7 +42,7 @@ DICT_CHAMP = {
     '加里奥': 'Galio',
     '奥瑞利安·索尔': 'Aurelion Sol',
     '瑞兹': 'Ryze',
-    '吉格斯': 'Zigs',
+    '吉格斯': 'Ziggs',
     '阿卡丽': 'Akali',
     '崔丝塔娜': 'Tristana',
     '卡特琳娜': 'Katarina',
@@ -122,12 +121,12 @@ DICT_CHAMP = {
     '阿木木': 'Amumu',
     '莉莉娅': 'Lillia',
     '希瓦娜': 'Shivana',
-    '拉莫斯': 'Ramus',
+    '拉莫斯': 'Rammus',
     '赵信': 'Xin Zhao',
     '奈德丽': 'Nidalee',
     '沃里克': 'Warwick',
     '千珏': 'Kindred',
-    '努努和威朗普': 'Nunu',
+    '努努和威朗普': 'Nunu y Willump',
     '蔚': 'Vi',
     '潘森': 'Pantheon',
     '费德提克': 'Fiddlesticks',
@@ -142,28 +141,28 @@ DICT_CHAMP = {
     '赫卡里姆': 'Hecarim',
     '奥拉夫': 'Olaf',
     '伊芙琳': 'Evelynn',
+    '佐伊' : 'Zoe',
+    '尼菈' : 'Nilah',
+    '阿克尚' : 'Akshan',
     '泰隆': 'Talon'
 }
 
-translator = Translator()
-
-# Hacemos la request a la API rank
+# Request a la API rank
 resp_rank = requests.get(RANK_URL, timeout=15)
 resp_rank.raise_for_status()   # Si hay error, que explote
 
-# Hacemos la request a la API champs
+# Request a la API champs
 resp_champ = requests.get(CHAMP_URL, timeout=15)
 resp_champ.raise_for_status()   # Si hay error, que explote
 
-
-data_rank = resp_rank.json()  # Convertimos a JSON
+# Convertimos a JSON
+data_rank = resp_rank.json()
 data_champ = resp_champ.json() 
 
 for posicion in data_rank['data']['2']:
     list_data = []
     for campeon in data_rank['data']['2'][posicion]:
         champ = data_champ['heroList'][campeon['hero_id']]
-        #print("'" + champ['name'] + "'" + ":" + " ,")
         champ['win_rate_percent'] = campeon['win_rate_percent']
         champ['appear_rate_percent'] = campeon['appear_rate_percent']
         champ['forbid_rate_percent'] = campeon['forbid_rate_percent']
@@ -172,6 +171,5 @@ for posicion in data_rank['data']['2']:
         except KeyError:
             champ['name_es'] = champ['name']
         list_data.append(champ)
-
     with open(POSITIONS[posicion] + '.json', 'x', encoding="utf-8") as file:
         file.write(json.dumps(list_data, ensure_ascii=False, indent=2))
