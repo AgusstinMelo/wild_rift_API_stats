@@ -4,33 +4,33 @@ GENERATED = *.xlsx
 GENERATED_TRASH = *.json
 OUTPUT_DIR = tierlists
 
-.PHONY: run_windows clean_windows run_linux clean_linux
+.PHONY: windows_run windows_clean linux_run linux_clean
 
 
 # ----- Windows -----
 
-windows: run_windows clean_windows
+windows: windows_run windows_clean
 
-run_windows:
-	@echo Ejecutando scripts...
+windows_run:
 	@echo Ejecutando extraccion_de_datos.py
 	@python extraccion_de_datos.py
 	@echo Ejecutando json_to_excel.py
 	@python json_to_excel.py
 	@echo Listo.
 
-clean_windows:
-	@echo Limpiando...
+windows_clean:
+	@echo Limpiando basura
+	@for %%F in ($(GENERATED_TRASH)) do @if exist "%%F" del /F /Q "%%F"
+	@echo Moviendo Estadisticas a "tierlists"
 	@if not exist "$(OUTPUT_DIR)" mkdir "$(OUTPUT_DIR)"
 	@for %%F in ($(GENERATED)) do @if exist "%%F" move /Y "%%F" "$(OUTPUT_DIR)" >NUL
-	@for %%F in ($(GENERATED_TRASH)) do @if exist "%%F" del /F /Q "%%F"
 	@echo Hecho.
 
 # ----- Linux -----
 
-linux: run_linux clean_linux
+linux: linux_run linux_clean
 
-run_linux:
+linux_run:
 	@echo "Ejecutando scripts..."
 	@for script in $(SCRIPTS); do \
 		echo "-> Ejecutando $$script"; \
@@ -38,7 +38,7 @@ run_linux:
 	done
 	@echo "Listo."
 
-clean_linux:
+linux_clean:
 	@echo "Limpiando..."
 	@mkdir -p $(OUTPUT_DIR)
 	@sh -c 'mv $(GENERATED) $(OUTPUT_DIR) 2>/dev/null || true'
